@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Conversor de Moedas</title>
+  <style>
+    body {
+      background-color: #001f3f;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    select, input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background-color: #0074D9;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #005fa3;
+    }
+
+    #resultado {
+      margin-top: 30px;
+      font-size: 20px;
+    }
+
+    .container {
+      background-color: #003366;
+      padding: 30px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 550px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+  <select id="idioma" onchange="trocarIdioma(this.value)">
+  <option value="pt">🇧🇷 Português</option>
+  <option value="en">🇺🇸 English</option>
+  </select>
+
+  <h1>Conversor de Moedas</h1>
+
+  <div class="container">
+    <label for="moedaOrigem">Converter de:</label><br>
+    <select id="moedaOrigem" onchange="atualizarMoedaDestino()">
+      <!-- opções serão inseridas via JavaScript -->
+    </select><br>
+
+    <label for="moedaDestino">Converter para:</label><br>
+    <select id="moedaDestino" onchange="atualizarMoedaOrigem()">
+      <!-- opções serão inseridas via JavaScript -->
+    </select><br>
+
+    <input type="number" id="valor" placeholder="Digite o valor a converter"><br>
+    <button onclick="converter()">Converter</button>
+
+    <p id="resultado">Insira os dados para ver o resultado.</p>
+  </div>
+
+  <script>
+  const traducoes = {
+    pt: {
+      titulo: "Conversor de Moedas",
+      converterDe: "Converter de:",
+      converterPara: "Converter para:",
+      digiteValor: "Digite o valor a converter",
+      botao: "Converter",
+      resultadoPadrao: "Insira os dados para ver o resultado.",
+      erroMoeda: "Selecione as duas moedas.",
+      erroValor: "Digite um valor válido.",
+      erroAPI: "Erro ao buscar a cotação. Tente novamente mais tarde."
+    },
+    en: {
+      titulo: "Currency Converter",
+      converterDe: "Convert from:",
+      converterPara: "Convert to:",
+      digiteValor: "Enter the amount to convert",
+      botao: "Convert",
+      resultadoPadrao: "Enter the data to see the result.",
+      erroMoeda: "Please select two currencies.",
+      erroValor: "Please enter a valid value.",
+      erroAPI: "Error fetching exchange rate. Try again later."
+    }
+  };
+
+  const moedas = {
+    USD: "Dólar Americano (USD)",
+    EUR: "Euro (EUR)",
+    JPY: "Iene Japonês (JPY)",
+    GBP: "Libra Esterlina (GBP)",
+    AUD: "Dólar Australiano (AUD)",
+    CAD: "Dólar Canadense (CAD)",
+    CHF: "Franco Suíço (CHF)",
+    CNY: "Yuan Chinês (CNY)",
+    INR: "Rupia Indiana (INR)",
+    BRL: "Real Brasileiro (BRL)"
+  };
+
+  const selectOrigem = document.getElementById("moedaOrigem");
+  const selectDestino = document.getElementById("moedaDestino");
+
+  let mensagensErro = traducoes.pt;
+  let idiomaAtual = "pt";
+
+  function trocarIdioma(idioma) {
+    const t = traducoes[idioma];
+    idiomaAtual = idioma;
+
+    document.querySelector("h1").innerText = t.titulo;
+    document.querySelector('label[for="moedaOrigem"]').innerText = t.converterDe;
+    document.querySelector('label[for="moedaDestino"]').innerText = t.converterPara;
+    document.getElementById("valor").placeholder = t.digiteValor;
+    document.querySelector("button").innerText = t.botao;
+    document.getElementById("resultado").innerText = t.resultadoPadrao;
+
+    mensagensErro = {
+      moeda: t.erroMoeda,
+      valor: t.erroValor,
+      api: t.erroAPI
+    };
+  }
+
+  function preencherSelects() {
+    for (const codigo in moedas) {
+      const option1 = document.createElement("option");
+      option1.value = codigo;
+      option1.text = moedas[codigo];
+      selectOrigem.appendChild(option1);
+
+      const option2 = document.createElement("option");
+      option2.value = codigo;
+      option2.text = moedas[codigo];
+      selectDestino.appendChild(option2);
+    }
+  }
+
+  function atualizarMoedaDestino() {
+    const origem = selectOrigem.value;
+    selectDestino.innerHTML = "";
+    for (const codigo in moedas) {
+      if (codigo !== origem) {
+        const option = document.createElement("option");
+        option.value = codigo;
+        option.text = moedas[codigo];
+        selectDestino.appendChild(option);
+      }
+    }
+  }
+
+  function atualizarMoedaOrigem() {
+    const destino = selectDestino.value;
+    selectOrigem.innerHTML = "";
+    for (const codigo in moedas) {
+      if (codigo !== destino) {
+        const option = document.createElement("option");
+        option.value = codigo;
+        option.text = moedas[codigo];
+        selectOrigem.appendChild(option);
+      }
+    }
+  }
+
+  async function converter() {
+    const moedaOrigem = selectOrigem.value;
+    const moedaDestino = selectDestino.value;
+    const valor = parseFloat(document.getElementById("valor").value);
+    const resultadoEl = document.getElementById("resultado");
+
+    if (!moedaOrigem || !moedaDestino) {
+      resultadoEl.innerText = mensagensErro.moeda;
+      return;
+    }
+
+    if (isNaN(valor) || valor <= 0) {
+      resultadoEl.innerText = mensagensErro.valor;
+      return;
+    }
+
+    try {
+      const resposta = await fetch(`https://economia.awesomeapi.com.br/json/last/${moedaOrigem}-${moedaDestino}`);
+      const dados = await resposta.json();
+      const par = dados[`${moedaOrigem}${moedaDestino}`];
+      const cotacao = parseFloat(par.bid);
+
+      if (isNaN(cotacao)) throw new Error("Cotação inválida");
+
+      const convertido = (valor * cotacao).toFixed(2);
+
+      if (idiomaAtual === "pt") {
+        resultadoEl.innerText = `${valor} ${moedaOrigem} equivalem a ${convertido} ${moedaDestino} (cotação: ${cotacao.toFixed(2)})`;
+      } else if (idiomaAtual === "en") {
+        resultadoEl.innerText = `${valor} ${moedaOrigem} is equivalent to ${convertido} ${moedaDestino} (rate: ${cotacao.toFixed(2)})`;
+      }
+
+    } catch (erro) {
+      resultadoEl.innerText = mensagensErro.api;
+      console.error("Erro:", erro);
+    }
+  }
+
+  // Inicialização
+  preencherSelects();
+  atualizarMoedaDestino();
+
+  // Detectar idioma automaticamente
+  const idiomaNavegador = navigator.language.startsWith("en") ? "en" : "pt";
+  document.getElementById("idioma").value = idiomaNavegador;
+  trocarIdioma(idiomaNavegador);
+</script>
+
+</body>
+</html>
